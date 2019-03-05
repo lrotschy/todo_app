@@ -1,0 +1,16 @@
+
+
+<ul id="lists">
+  <% sort_lists(@lists) do |list, idx| %>
+      <li class="<%= list_class(list) %>">
+        <a>
+          <h2><a href="/lists/<%= idx %>"><%= list[:name] %></a></h2>
+          <p><%= remaining_todos_count(list)%> / <%= total_todos_count(list) %></p>
+        </a>
+      </li>
+  <% end %>
+</ul>
+
+<% content_for :header_links do %>
+  <a class="add" href="/lists/new">New List</a>
+<% end %>
