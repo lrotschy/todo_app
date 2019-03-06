@@ -1,5 +1,5 @@
 require "sinatra"
-require "sinatra/reloader"
+require "sinatra/reloader" if development?
 require "tilt/erubis"
 require "sinatra/content_for"
 
@@ -44,6 +44,7 @@ helpers do
   end
 
   def total_todos_count(list)
+    return "zero" if !list[:todos]
     list[:todos].size
   end
 
@@ -61,7 +62,7 @@ helpers do
     unfinished.merge(finished).each(&block)
   end
 
-  def sort_todos(todos, proc, &block)
+  def sort_todos(todos, &block)
     finished, unfinished = todos.partition { |todo| todo[:completed] }
 
     (unfinished + finished).each do |todo|
