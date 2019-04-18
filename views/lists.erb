@@ -1,7 +1,7 @@
 
 
 <ul id="lists">
-  <% sort_lists(@lists) do |list| %>
+  <% sort_lists(@storage.all_lists) do |list| %>
       <li class="<%= list_class(list) %>">
         <a>
           <h2><a href="/lists/<%= list[:id].to_s %>"><%= list[:name] %></a></h2>
