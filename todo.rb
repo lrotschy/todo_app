@@ -1,7 +1,7 @@
 require "sinatra"
-require "sinatra/reloader" if development?
 require "tilt/erubis"
 require "sinatra/content_for"
+require_relative "database_persistence"
 
 configure do
   enable :sessions
@@ -9,8 +9,13 @@ configure do
   set :erb, escape_html: true
 end
 
+configure(:development) do
+  require "sinatra/reloader"
+  also_reload "database_persistence.rb"
+end
+
 before do
-  @storage = SessionPersistence.new(session)
+  @storage = DatabasePersistence.new(logger)
 end
 
 helpers do
@@ -20,7 +25,7 @@ helpers do
 
   def remaining_todos_count(list)
     return 0 if list[:todos].nil?
-    list[:todos].count { |todo| !todo[:completed] }
+    list[:todos].count { |todo| todo[:completed] == false }
   end
 
   def list_class(list)
@@ -50,78 +55,14 @@ helpers do
 
   def load_list(id)
     list = @storage.find_list(id)
-    print list
-    print list[:todos]
     return list if list
 
     session[:error] = "The specified list was not found"
     redirect "/lists"
     halt
   end
-
 end
 
-class SessionPersistence
-
-  def initialize(session)
-    @session = session
-    @session[:lists] ||= []
-  end
-
-  def find_list(id)
-    @session[:lists].find { |list| list[:id] == id.to_i }
-  end
-
-  def all_lists
-    @session[:lists]
-  end
-
-  def delete_list(id)
-    @session[:lists].reject! { |list| list[:id] == id.to_i }
-  end
-
-  def create_list(name)
-    @session[:lists] << { name: name, id: next_element_id(@session[:lists]), todos: [] }
-  end
-
-  def rename_list(id, name)
-    list = find_list(id)
-    list[:name] = name
-  end
-
-  def next_element_id(elements)
-      max = elements.map { |elem| elem[:id] }.max || 0
-      max + 1
-  end
-
-  def add_todo(list_id, name, completed=false)
-    list = find_list(list_id)
-    todo_id = next_element_id(list[:todos])
-    list[:todos] << { id: todo_id, name: name, completed: completed }
-  end
-
-  def delete_todo_item(list_id, todo_id)
-    list = find_list(list_id)
-
-    list[:todos] = list[:todos].reject! do |todo|
-      todo[:id] == todo_id
-    end
-  end
-
-  def update_completed_status(list_id, todo_id, status)
-    list = find_list(list_id)
-    todo = list[:todos].find { |todo| todo[:id] == todo_id.to_i }
-    todo[:completed] = status
-  end
-
-  def mark_all_completed(list_id)
-    list = find_list(list_id)
-    list[:todos].each do |todo|
-      todo[:completed] = true
-    end
-  end
-
-end
 
 get "/" do
   redirect "/lists"
